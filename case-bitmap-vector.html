@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>位图转矢量图浏览器工具 — Case Study | AI Product Designer</title>
+<meta name="description" content="一个浏览器本地运行的位图转 SVG 工具，支持 PNG/JPG/WebP 上传、彩色与单色矢量化、SVG 下载和代码复制。" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFA;--bg-soft:#F2F2F2;--surface:#FFFFFF;
+    --ink:#0A0A0A;--ink-2:#1F1F1F;--mute:#6B6B6B;--mute-2:#9A9A9A;
+    --line:#E7E7E7;--line-2:#EFEFEF;
+    --accent:#208BFF;--accent-2:#43BFFF;--accent-soft:rgba(32,139,255,.08);--accent-ink:#0B5BD1;
+    --green:#00B64A;--orange:#F5A524;--red:#E5484D;
+    --shadow-md:0 12px 32px -12px rgba(10,10,10,.18),0 0 0 1px rgba(10,10,10,.05);
+    --shadow-lg:0 40px 80px -24px rgba(10,10,10,.22),0 0 0 1px rgba(10,10,10,.06);
+    --rad:14px;--rad-lg:20px;--maxw:1240px;--nav-h:64px;
+    --font-sans:"Geist",ui-sans-serif,-apple-system,sans-serif;
+    --font-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --font-disp:"Syne","Geist",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--font-sans);background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;letter-spacing:-0.005em;overflow-x:hidden;
+  }
+  ::selection{background:var(--accent);color:#fff}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  .mono{font-family:var(--font-mono)}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--mute);
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+
+  .nav{
+    position:sticky;top:0;z-index:30;height:var(--nav-h);
+    backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+    background:color-mix(in srgb,var(--bg) 80%,transparent);
+    border-bottom:1px solid var(--line);display:flex;align-items:center;
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  .nav-logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;letter-spacing:-0.01em}
+  .nav-logo .mark{width:50px;height:50px;display:grid;place-items:center;flex-shrink:0;margin:-10px 0}
+  .nav-logo .mark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 4px 10px rgba(32,139,255,.28))}
+  .back-link{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mute);padding:8px 12px;border-radius:8px;transition:color .2s ease,background .2s ease}
+  .back-link:hover{color:var(--ink);background:var(--bg-soft)}
+  .back-link .arr{transition:transform .2s}
+  .back-link:hover .arr{transform:translateX(-2px)}
+
+  .hero{padding:80px 0 64px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .hero-bg .grid{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(to right,color-mix(in srgb,var(--ink) 4%,transparent) 1px,transparent 1px),
+      linear-gradient(to bottom,color-mix(in srgb,var(--ink) 4%,transparent) 1px,transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse 70% 60% at 80% 10%,#000 20%,transparent 70%);
+    -webkit-mask-image:radial-gradient(ellipse 70% 60% at 80% 10%,#000 20%,transparent 70%);
+  }
+  .hero-bg .glow{position:absolute;right:-5%;top:-20%;width:55%;height:90%;background:radial-gradient(circle at 40% 30%,rgba(67,191,255,.22),transparent 60%);filter:blur(60px)}
+  .hero .wrap{position:relative;z-index:1}
+  .hero-layout{display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:44px;align-items:end}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:18px}
+  .meta-pill{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;padding:5px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--mute)}
+  .hero h1{font-family:var(--font-disp);font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-0.03em;font-weight:700;margin:26px 0 0;max-width:18ch}
+  .hero h1 .acc{background:linear-gradient(135deg,#2066F0,#43BFFF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .hsub{font-family:var(--font-mono);font-size:13px;color:var(--mute);margin-top:16px;letter-spacing:.02em}
+  .hero p.desc{font-size:18px;line-height:1.6;color:var(--mute);margin-top:26px;max-width:62ch}
+  .hero p.desc strong{color:var(--ink);font-weight:600}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .hero-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;
+    padding:0 18px;border-radius:14px;font-size:14px;font-weight:500;
+    background:linear-gradient(135deg,#2066F0,#43BFFF);color:#fff;
+    box-shadow:0 8px 24px -8px rgba(32,102,240,.6),inset 0 0 0 1px rgba(255,255,255,.18);
+    transition:transform .25s ease;
+  }
+  .hero-btn.secondary{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+  .hero-btn:hover{transform:translateY(-2px)}
+  .hero-shot{margin:0;background:rgba(255,255,255,.72);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:0;border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden;transform:rotate(.6deg)}
+  .hero-shot-head{display:flex;align-items:center;gap:7px;padding:12px 15px;border-bottom:1px solid var(--line);background:#fff}
+  .hero-shot-head span{width:9px;height:9px;border-radius:50%;background:#E5484D}
+  .hero-shot-head span:nth-child(2){background:#F5A524}
+  .hero-shot-head span:nth-child(3){background:#00B64A}
+  .hero-shot img{display:block;width:100%;height:auto}
+
+  section.case{padding:100px 0;border-top:1px solid var(--line);position:relative}
+  .case-grid{display:flex;flex-direction:column;align-items:stretch}
+  .case-num{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+  .case-h{font-family:var(--font-disp);font-size:clamp(28px,3vw,40px);line-height:1.1;letter-spacing:-0.025em;font-weight:700;margin:14px 0 0;max-width:24ch}
+  .case-side-note{margin-top:16px;font-size:15px;line-height:1.7;color:var(--mute);max-width:62ch}
+  .case-body p{font-size:16px;line-height:1.75;color:var(--ink-2);margin:0 0 18px;max-width:72ch}
+  .case-body p:last-child{margin-bottom:0}
+  .case-body strong{color:var(--ink);font-weight:600}
+  .lead-line{font-size:18px !important;color:var(--ink) !important}
+
+  .twocol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+  .info-card{position:relative;padding:28px 24px;background:color-mix(in srgb,var(--surface) 70%,transparent);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid var(--line);border-radius:16px;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,background .35s ease;overflow:hidden;min-height:196px}
+  .info-card::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(10,10,10,.12),rgba(10,10,10,.04),transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s ease;pointer-events:none}
+  .info-card:hover{transform:translateY(-5px);background:var(--surface);box-shadow:0 24px 60px -22px rgba(10,10,10,.18)}
+  .info-card:hover::after{opacity:1}
+  .info-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-soft),transparent);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line));color:var(--accent);margin-bottom:18px;font-family:var(--font-mono);font-size:12px;font-weight:600}
+  .info-card .ic svg{width:21px;height:21px;display:block;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .info-card .k{position:absolute;top:30px;right:24px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
+  .info-card .t{font-family:var(--font-disp);font-weight:700;font-size:18px;margin:0 0 10px;letter-spacing:-0.01em}
+  .info-card .d{font-size:14px;line-height:1.65;color:var(--mute)}
+
+  .stages{margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .stage{position:relative;padding:26px 24px 28px;background:color-mix(in srgb,var(--surface) 65%,transparent);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid var(--line);border-radius:18px;min-height:230px;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,border-color .35s ease;overflow:hidden}
+  .stage:hover{transform:translateY(-5px);background:var(--surface);box-shadow:0 24px 60px -24px rgba(10,10,10,.18)}
+  .stage-bignum{position:absolute;top:14px;right:20px;font-family:var(--font-disp);font-weight:800;font-size:62px;line-height:1;letter-spacing:-0.04em;color:rgba(10,10,10,.05);pointer-events:none}
+  .stage-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent-soft),transparent);border:1px solid color-mix(in srgb,var(--accent) 16%,var(--line));color:var(--accent);margin-bottom:22px;position:relative;z-index:1;font-family:var(--font-mono);font-size:13px;font-weight:600}
+  .stage-ic svg{width:23px;height:23px;display:block;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .stage-body{min-width:0;position:relative;z-index:1}
+  .stage-en{font-family:var(--font-disp);font-weight:700;font-size:18px;letter-spacing:-0.015em;margin:0 0 4px;line-height:1.2;color:var(--ink)}
+  .stage-cn{font-size:13px;color:var(--mute);font-weight:500;margin:0 0 16px;letter-spacing:.02em}
+  .stage-d{font-size:13px;line-height:1.65;color:var(--mute);margin:0}
+
+  .scope-board{
+    margin-top:32px;padding:30px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 88%,var(--bg-soft)),var(--surface));
+    border:1px solid var(--line);border-radius:var(--rad-lg);
+  }
+  .scope-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:22px}
+  .scope-k{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+  .scope-title{font-family:var(--font-disp);font-size:22px;line-height:1.25;letter-spacing:-.02em;font-weight:700;margin:0;color:var(--ink)}
+  .scope-pill{
+    flex:0 0 auto;font-family:var(--font-mono);font-size:11px;letter-spacing:.03em;color:var(--accent-ink);
+    background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--line));border-radius:999px;padding:7px 11px;
+  }
+  .scope-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .scope-card{
+    position:relative;min-height:184px;padding:18px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(255,255,255,.76);overflow:hidden;transition:transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s ease,background .28s ease;
+  }
+  .scope-card:hover{transform:translateY(-3px);background:var(--surface);box-shadow:0 18px 44px -32px rgba(10,10,10,.28)}
+  .scope-no{
+    position:absolute;right:14px;top:10px;font-family:var(--font-disp);font-size:42px;line-height:1;font-weight:800;
+    letter-spacing:-.04em;color:color-mix(in srgb,var(--accent) 9%,transparent);pointer-events:none;
+  }
+  .scope-ic{
+    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:16px;
+    background:linear-gradient(135deg,var(--accent-soft),transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
+    color:var(--accent);
+  }
+  .scope-ic svg{width:22px;height:22px;display:block;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .scope-card h3{position:relative;z-index:1;margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .scope-card p{position:relative;z-index:1;margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--mute)}
+  .scope-chips{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .scope-chip{font-family:var(--font-mono);font-size:11px;color:var(--accent-ink);background:var(--bg-soft);border-radius:7px;padding:4px 7px}
+  .scope-sliders{display:grid;gap:8px;margin-top:14px;position:relative;z-index:1}
+  .scope-slider{height:6px;border-radius:999px;background:var(--bg-soft);overflow:hidden}
+  .scope-slider i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2066F0,#43BFFF)}
+  .scope-limit{position:relative;z-index:1;margin-top:14px;font-family:var(--font-disp);font-size:30px;line-height:1;font-weight:700;color:var(--ink)}
+  .scope-limit span{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--mute);margin-left:6px}
+  .scope-out{
+    margin-top:14px;padding:12px 14px;border-radius:13px;background:var(--bg-soft);
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13px;color:var(--mute);
+  }
+  .scope-out b{color:var(--ink);font-weight:600}
+  .scope-out span{font-family:var(--font-mono);font-size:10.5px;padding:4px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+
+  .metrics{margin-top:32px;border:1px solid var(--line);border-radius:var(--rad-lg);overflow:hidden;background:color-mix(in srgb,var(--surface) 70%,transparent);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .mrow{display:grid;grid-template-columns:1.6fr 1fr 1fr .9fr;gap:16px;padding:16px 24px;align-items:center;border-bottom:1px solid var(--line-2);transition:background .25s ease}
+  .mrow:not(.hd):hover{background:var(--surface)}
+  .mrow:last-child{border-bottom:0}
+  .mrow.hd{background:var(--bg-soft);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+  .mrow .m-name{font-size:14px;font-weight:500;color:var(--ink-2)}
+  .mrow .m-before{font-family:var(--font-mono);font-size:13.5px;color:var(--mute-2);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--mute-2) 50%,transparent)}
+  .mrow .m-after{font-family:var(--font-mono);font-size:14px;color:var(--ink);font-weight:600}
+  .mrow .m-delta{font-family:var(--font-mono);font-size:12px;font-weight:600;text-align:right}
+  .mrow .m-delta span{display:inline-block;padding:4px 9px;border-radius:7px;color:#008c39;background:rgba(0,182,74,.1)}
+
+  .showcase{margin-top:32px;display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+  .show-card{background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);border-radius:var(--rad-lg);overflow:hidden;backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%)}
+  .show-card .show-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .show-card .show-h b{font-family:var(--font-disp);font-size:17px}
+  .show-card .show-h span{font-family:var(--font-mono);font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+  .show-card .show-body{padding:22px}
+  .shot-frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0A0A0A;box-shadow:0 24px 60px -28px rgba(10,10,10,.32)}
+  .shot-frame img{display:block;width:100%;height:auto}
+  .mini-list{display:flex;flex-direction:column;gap:12px}
+  .mini{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  .mini b{display:block;font-size:14px;color:var(--ink)}
+  .mini span{display:block;margin-top:6px;font-size:13px;line-height:1.55;color:var(--mute)}
+  .state-list{display:flex;flex-direction:column;gap:10px}
+  .state-card{
+    position:relative;display:grid;grid-template-columns:34px 1fr;gap:14px;
+    padding:16px;border:1px solid color-mix(in srgb,var(--state) 20%,var(--line));
+    border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--state) 7%,var(--surface)),var(--surface));
+    overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+  }
+  .state-card:hover{transform:translateY(-2px);box-shadow:0 16px 38px -26px rgba(10,10,10,.24)}
+  .state-rail{width:34px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .state-dot{width:28px;height:28px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--state) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--state) 38%,var(--line));color:var(--state);font-family:var(--font-mono);font-size:11px;font-weight:600}
+  .state-line{width:2px;flex:1;min-height:32px;border-radius:2px;background:linear-gradient(180deg,color-mix(in srgb,var(--state) 40%,transparent),transparent)}
+  .state-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .state-title{font-family:var(--font-disp);font-weight:700;font-size:16px;letter-spacing:-0.01em;color:var(--ink)}
+  .state-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--state);white-space:nowrap;margin-top:2px}
+  .state-desc{margin:7px 0 0;font-size:13px;line-height:1.6;color:var(--mute)}
+  .state-ui{display:flex;align-items:center;gap:8px;margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--mute)}
+  .state-ui .btn-mini{height:20px;min-width:58px;border-radius:6px;border:1px solid var(--line);background:var(--bg-soft)}
+  .state-ui .btn-mini.active{background:var(--state);border-color:var(--state);box-shadow:0 8px 18px -12px var(--state)}
+  .state-ui .progress{height:6px;flex:1;border-radius:999px;background:var(--bg-soft);overflow:hidden}
+  .state-ui .progress i{display:block;height:100%;width:62%;border-radius:inherit;background:linear-gradient(90deg,var(--state),color-mix(in srgb,var(--state) 50%,#fff))}
+  .state-ui .code-line{height:6px;border-radius:999px;background:color-mix(in srgb,var(--state) 16%,var(--bg-soft));flex:1}
+  .state-ui .code-line:nth-child(2){flex:.65}
+  .state-ui .keep{padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--state) 10%,var(--surface));color:var(--state);border:1px solid color-mix(in srgb,var(--state) 24%,var(--line))}
+
+  .next{padding:80px 0 120px;border-top:1px solid var(--line)}
+  .next-wrap{display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
+  .next-h{font-family:var(--font-disp);font-size:28px;font-weight:700;letter-spacing:-0.02em;margin:0;max-width:30ch}
+  .next .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:14px;font-size:14.5px;font-weight:500;background:linear-gradient(135deg,#2066F0,#43BFFF);color:#fff;box-shadow:0 8px 24px -8px rgba(32,102,240,.6),inset 0 0 0 1px rgba(255,255,255,.18);transition:transform .25s ease}
+  .next .btn.secondary{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+  .next .btn:hover{transform:translateY(-2px)}
+  .next-actions{display:flex;flex-wrap:wrap;gap:12px}
+
+  .back-top{
+    position:fixed;right:24px;bottom:24px;z-index:70;display:grid;place-items:center;width:46px;height:46px;
+    border:1px solid var(--ink);border-radius:14px;background:color-mix(in srgb,var(--surface) 78%,transparent);color:var(--ink);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);
+    box-shadow:0 18px 44px -18px rgba(15,40,90,.32);cursor:pointer;opacity:0;pointer-events:none;
+    transform:translateY(10px) scale(.96);
+    transition:opacity .22s ease,transform .22s ease,color .2s ease,background .2s ease,border-color .2s ease;
+  }
+  .back-top.is-show{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+  .back-top:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-2px) scale(1)}
+  .back-top:active{transform:translateY(0) scale(.98)}
+  .back-top svg{width:20px;height:20px;display:block}
+  .button-confetti{position:fixed;left:0;top:0;z-index:120;pointer-events:none;width:0;height:0;overflow:visible}
+  .button-confetti span{
+    position:absolute;left:0;top:0;width:7px;height:10px;border-radius:2px;background:var(--c);
+    transform:translate(-50%,-50%) rotate(0deg) scale(var(--s));animation:buttonConfettiPop .82s cubic-bezier(.16,.9,.24,1) forwards;opacity:.95;
+  }
+  .button-confetti span:nth-child(3n){width:6px;height:6px;border-radius:50%}
+  .button-confetti span:nth-child(4n){width:10px;height:4px;border-radius:999px}
+  @keyframes buttonConfettiPop{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(var(--s));opacity:0}
+    12%{opacity:1}
+    100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r)) scale(var(--s));opacity:0}
+  }
+
+  .reveal{opacity:1;transform:none;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.is-in{opacity:1;transform:none}
+  .reveal-d1{transition-delay:.08s}.reveal-d2{transition-delay:.16s}.reveal-d3{transition-delay:.24s}
+
+  @media(max-width:980px){
+    .hero-layout,.showcase{grid-template-columns:1fr}
+    .hero-shot{transform:none}
+    .stages{grid-template-columns:repeat(2,1fr)}
+    .scope-grid{grid-template-columns:repeat(2,1fr)}
+    section.case{padding:84px 0}
+  }
+  @media(max-width:880px){.twocol{grid-template-columns:1fr 1fr}}
+  @media(max-width:720px){
+    .wrap,.nav-inner{padding:0 20px}
+    .hero{padding:56px 0 48px}
+    .twocol,.stages{grid-template-columns:1fr}
+    .scope-head{flex-direction:column;gap:12px}
+    .scope-board{padding:22px}
+    .scope-grid{grid-template-columns:1fr}
+    .mrow{grid-template-columns:1fr 1fr;gap:8px}
+    .mrow .m-name{grid-column:1/-1;font-weight:600}
+    .mrow.hd .m-after,.mrow.hd .m-delta{display:none}
+    .mrow.hd{grid-template-columns:1fr}
+    .nav-logo span:last-child span{display:none}
+    .back-top{right:16px;bottom:16px;width:42px;height:42px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <span class="mark"><img src="assets/logo.png" alt="Liu Wei logo" /></span>
+      <span>Liu Wei<span style="color:var(--mute);font-weight:400"> &nbsp;/ AI Product Designer</span></span>
+    </a>
+    <a href="index.html#projects" class="back-link"><span class="arr">←</span> Back to all projects</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="grid"></div>
+      <div class="glow"></div>
+    </div>
+    <div class="wrap">
+      <div class="hero-layout">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> Case Study · Frontend Tool · GitHub Pages</div>
+          <div class="hero-meta">
+            <span class="meta-pill">Vite / React / TypeScript</span>
+            <span class="meta-pill">Canvas Processing</span>
+            <span class="meta-pill">SVG Export</span>
+          </div>
+          <h1>位图转<span class="acc">矢量图</span><br/>浏览器工具</h1>
+          <div class="hsub">A local-first bitmap-to-SVG converter for logos, icons and stickers</div>
+          <p class="desc">
+            一个完全在浏览器本地运行的小工具，把 PNG / JPG / WebP 快速转换成 SVG。
+            我围绕 <strong>上传、参数调节、对比预览、下载与复制代码</strong> 搭建完整体验，
+            让设计素材处理从复杂软件操作变成一个轻量、可分享的前端工具。
+          </p>
+          <div class="hero-actions">
+            <a class="hero-btn" href="https://wliu76598-cmyk.github.io/bitmap-vector-tool/" target="_blank" rel="noreferrer">立即体验 <span>→</span></a>
+            <a class="hero-btn secondary" href="https://github.com/wliu76598-cmyk/bitmap-vector-tool" target="_blank" rel="noreferrer">GitHub</a>
+          </div>
+        </div>
+        <figure class="hero-shot">
+          <div class="hero-shot-head" aria-hidden="true"><span></span><span></span><span></span></div>
+          <img src="assets/bitmap-vector-tool.png" alt="位图转矢量图工具界面预览" />
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="case">
+    <div class="wrap case-grid">
+      <div class="case-aside reveal">
+        <div class="case-num">01 · Problem</div>
+        <h2 class="case-h">素材转 SVG，不应该总要打开重型软件</h2>
+        <p class="case-side-note">设计师、运营和前端都可能遇到同一个小问题：手上只有位图，但交付或排版需要 SVG。</p>
+      </div>
+      <div class="case-body reveal reveal-d1">
+        <p class="lead-line">
+          目标不是替代专业矢量软件，而是服务 logo、图标、贴纸这类边缘清晰、颜色较少的素材。
+        </p>
+        <div class="twocol">
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+                <path d="M10 7h3.5A3.5 3.5 0 0 1 17 10.5V14"></path>
+                <path d="M14 11l3 3 3-3"></path>
+              </svg>
+            </div>
+            <div class="k">// Pain</div>
+            <div class="t">流程过重</div>
+            <div class="d">常规方案需要打开设计软件或在线转换站点，对简单素材来说操作成本偏高。</div>
+          </div>
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l7 3v5.5c0 4.6-2.8 7.4-7 9.5-4.2-2.1-7-4.9-7-9.5V6z"></path>
+                <rect x="9" y="10.5" width="6" height="5" rx="1.3"></rect>
+                <path d="M10.5 10.5V9a1.5 1.5 0 0 1 3 0v1.5"></path>
+              </svg>
+            </div>
+            <div class="k">// Risk</div>
+            <div class="t">隐私顾虑</div>
+            <div class="d">Logo 和品牌素材上传到第三方服务，会让用户担心文件外传。</div>
+          </div>
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M13 3L5 14h6l-1 7 8-11h-6z"></path>
+                <path d="M18 4h2"></path>
+                <path d="M16 7h4"></path>
+              </svg>
+            </div>
+            <div class="k">// Goal</div>
+            <div class="t">轻量可控</div>
+            <div class="d">上传后立即预览，通过少量滑杆调节结果，再下载 SVG 或复制代码。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="case">
+    <div class="wrap case-grid">
+      <div class="case-aside reveal">
+        <div class="case-num">02 · Scope</div>
+        <h2 class="case-h">第一版只做最清晰的转换场景</h2>
+        <p class="case-side-note">把复杂照片、动图、批量处理都排除在第一版之外，优先把 logo / icon / sticker 做稳。</p>
+      </div>
+      <div class="case-body reveal reveal-d1">
+        <div class="scope-board">
+          <div class="scope-head">
+            <div>
+              <div class="scope-k">MVP boundary</div>
+              <h3 class="scope-title">只保留高频、低风险、可本地完成的转换链路</h3>
+            </div>
+            <div class="scope-pill">Logo / Icon / Sticker</div>
+          </div>
+          <div class="scope-grid">
+            <div class="scope-card">
+              <div class="scope-no">01</div>
+              <div class="scope-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                  <path d="M8 14l2.2-2.2 2 2 2.8-3.4L18 14.5"></path>
+                  <circle cx="8.5" cy="9" r="1.2"></circle>
+                </svg>
+              </div>
+              <h3>输入格式</h3>
+              <p>覆盖绝大多数 logo 与贴纸素材，先把入口做轻。</p>
+              <div class="scope-chips">
+                <span class="scope-chip">PNG</span>
+                <span class="scope-chip">JPG/JPEG</span>
+                <span class="scope-chip">WebP</span>
+              </div>
+            </div>
+            <div class="scope-card">
+              <div class="scope-no">02</div>
+              <div class="scope-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 6h5v5H5z"></path>
+                  <path d="M14 13c2.2 0 4 1.8 4 4"></path>
+                  <path d="M14 17c0-2.2 1.8-4 4-4"></path>
+                  <path d="M10 8h5"></path>
+                  <path d="M13 5l3 3-3 3"></path>
+                </svg>
+              </div>
+              <h3>转换模式</h3>
+              <p>兼顾展示、印刷、雕刻和前端嵌入场景。</p>
+              <div class="scope-chips">
+                <span class="scope-chip">彩色 SVG</span>
+                <span class="scope-chip">单色 SVG</span>
+              </div>
+            </div>
+            <div class="scope-card">
+              <div class="scope-no">03</div>
+              <div class="scope-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 7h7"></path>
+                  <path d="M15 7h5"></path>
+                  <circle cx="13" cy="7" r="2"></circle>
+                  <path d="M4 17h4"></path>
+                  <path d="M12 17h8"></path>
+                  <circle cx="10" cy="17" r="2"></circle>
+                </svg>
+              </div>
+              <h3>参数策略</h3>
+              <p>只暴露最必要的调节项，避免专业参数压垮用户。</p>
+              <div class="scope-sliders" aria-hidden="true">
+                <div class="scope-slider"><i style="width:72%"></i></div>
+                <div class="scope-slider"><i style="width:54%"></i></div>
+                <div class="scope-slider"><i style="width:62%"></i></div>
+              </div>
+            </div>
+            <div class="scope-card">
+              <div class="scope-no">04</div>
+              <div class="scope-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="4" y="6" width="16" height="12" rx="2"></rect>
+                  <path d="M8 10h8"></path>
+                  <path d="M8 14h5"></path>
+                  <path d="M18 4v3"></path>
+                  <path d="M18 17v3"></path>
+                  <path d="M6 4v3"></path>
+                  <path d="M6 17v3"></path>
+                </svg>
+              </div>
+              <h3>性能边界</h3>
+              <p>超出最长边自动等比缩放，在浏览器本地完成处理。</p>
+              <div class="scope-limit">1600<span>px max edge</span></div>
+            </div>
+          </div>
+          <div class="scope-out">
+            <b>第一版暂不覆盖</b>
+            <span>复杂照片</span>
+            <span>动图</span>
+            <span>批量处理</span>
+            <span>精细路径编辑</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="case">
+    <div class="wrap case-grid">
+      <div class="case-aside reveal">
+        <div class="case-num">03 · Experience</div>
+        <h2 class="case-h">左侧调参，右侧即时对比</h2>
+        <p class="case-side-note">工具本体使用黑色专业工作台；作品集详情页则沿用浅色 Case Study 系统，形成清晰对比。</p>
+      </div>
+      <div class="case-body reveal reveal-d1">
+        <div class="stages">
+          <div class="stage">
+            <div class="stage-bignum">01</div>
+            <div class="stage-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 16V5"></path>
+                <path d="M7.5 9.5 12 5l4.5 4.5"></path>
+                <path d="M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"></path>
+              </svg>
+            </div>
+            <div class="stage-body">
+              <h3 class="stage-en">Upload</h3>
+              <div class="stage-cn">上传图片</div>
+              <p class="stage-d">支持点击选择和拖拽上传；不支持格式会明确提示，不清空已生成结果。</p>
+            </div>
+          </div>
+          <div class="stage">
+            <div class="stage-bignum">02</div>
+            <div class="stage-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h7"></path>
+                <path d="M15 7h5"></path>
+                <circle cx="13" cy="7" r="2"></circle>
+                <path d="M4 17h4"></path>
+                <path d="M12 17h8"></path>
+                <circle cx="10" cy="17" r="2"></circle>
+              </svg>
+            </div>
+            <div class="stage-body">
+              <h3 class="stage-en">Tune</h3>
+              <div class="stage-cn">参数调节</div>
+              <p class="stage-d">彩色 / 单色模式，细节、平滑度、颜色数量保持简单可理解。</p>
+            </div>
+          </div>
+          <div class="stage">
+            <div class="stage-bignum">03</div>
+            <div class="stage-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                <path d="M12 5v14"></path>
+                <path d="M7 12h3"></path>
+                <path d="M14 12h3"></path>
+              </svg>
+            </div>
+            <div class="stage-body">
+              <h3 class="stage-en">Preview</h3>
+              <div class="stage-cn">对比预览</div>
+              <p class="stage-d">桌面端原图和 SVG 并排展示，移动端改为上下排列，方便快速检查结果。</p>
+            </div>
+          </div>
+          <div class="stage">
+            <div class="stage-bignum">04</div>
+            <div class="stage-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 4v10"></path>
+                <path d="M8 10l4 4 4-4"></path>
+                <path d="M5 20h14"></path>
+                <path d="M18 5h1.5A1.5 1.5 0 0 1 21 6.5V9"></path>
+              </svg>
+            </div>
+            <div class="stage-body">
+              <h3 class="stage-en">Export</h3>
+              <div class="stage-cn">导出结果</div>
+              <p class="stage-d">可下载 SVG 文件，也可复制 SVG 代码给前端直接使用。</p>
+            </div>
+          </div>
+        </div>
+        <div class="showcase">
+          <div class="show-card">
+            <div class="show-h"><b>工具主界面</b><span>Desktop</span></div>
+            <div class="show-body">
+              <div class="shot-frame">
+                <img src="assets/bitmap-vector-tool.png" alt="位图转矢量工具桌面端界面" />
+              </div>
+            </div>
+          </div>
+          <div class="show-card">
+            <div class="show-h"><b>交互状态</b><span>States</span></div>
+            <div class="show-body state-list">
+              <div class="state-card" style="--state:#9A9A9A">
+                <div class="state-rail"><div class="state-dot">00</div><div class="state-line"></div></div>
+                <div>
+                  <div class="state-head"><div class="state-title">未上传</div><div class="state-badge">Disabled</div></div>
+                  <p class="state-desc">控制区禁用，下载与复制按钮不可点，避免空状态误操作。</p>
+                  <div class="state-ui"><span class="btn-mini"></span><span class="btn-mini"></span><span>waiting image</span></div>
+                </div>
+              </div>
+              <div class="state-card" style="--state:#208BFF">
+                <div class="state-rail"><div class="state-dot">01</div><div class="state-line"></div></div>
+                <div>
+                  <div class="state-head"><div class="state-title">转换中</div><div class="state-badge">Processing</div></div>
+                  <p class="state-desc">读取和转换阶段都有明确状态提示，减少用户等待焦虑。</p>
+                  <div class="state-ui"><div class="progress"><i></i></div><span>tracing paths</span></div>
+                </div>
+              </div>
+              <div class="state-card" style="--state:#00B64A">
+                <div class="state-rail"><div class="state-dot">02</div><div class="state-line"></div></div>
+                <div>
+                  <div class="state-head"><div class="state-title">转换成功</div><div class="state-badge">Ready</div></div>
+                  <p class="state-desc">启用导出操作，并在代码区展示可复制的 SVG 文本。</p>
+                  <div class="state-ui"><span class="btn-mini active"></span><span class="code-line"></span><span class="code-line"></span></div>
+                </div>
+              </div>
+              <div class="state-card" style="--state:#E5484D">
+                <div class="state-rail"><div class="state-dot">03</div><div class="state-line"></div></div>
+                <div>
+                  <div class="state-head"><div class="state-title">异常处理</div><div class="state-badge">Recoverable</div></div>
+                  <p class="state-desc">格式错误、解码失败、转换失败、复制失败都不会清空当前工作区。</p>
+                  <div class="state-ui"><span class="keep">keep current workspace</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="case">
+    <div class="wrap case-grid">
+      <div class="case-aside reveal">
+        <div class="case-num">04 · Next</div>
+        <h2 class="case-h">后续可以继续扩展的方向</h2>
+        <p class="case-side-note">MVP 已经能完成核心转换链路，下一步可以围绕质量、性能和批量效率继续迭代。</p>
+      </div>
+      <div class="case-body reveal reveal-d1">
+        <div class="twocol">
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l2.4 5 5.6.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9 5.6-.8z"></path>
+                <path d="M9.5 12.2l1.6 1.6 3.4-3.8"></path>
+              </svg>
+            </div>
+            <div class="k">// Quality</div>
+            <div class="t">转换质量</div>
+            <div class="d">增加更多阈值策略、颜色合并策略和路径简化选项，提升复杂 logo 的可控性。</div>
+          </div>
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 3h6"></path>
+                <path d="M12 3v4"></path>
+                <path d="M6.5 8.5A7 7 0 1 0 17.5 8.5"></path>
+                <path d="M12 12l3-3"></path>
+                <path d="M4 4l3 3"></path>
+              </svg>
+            </div>
+            <div class="k">// Performance</div>
+            <div class="t">Web Worker</div>
+            <div class="d">把矢量化模块迁移到 Worker，避免大图处理占用主线程，提升交互流畅度。</div>
+          </div>
+          <div class="info-card">
+            <div class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 4v10"></path>
+                <path d="M8 10l4 4 4-4"></path>
+                <path d="M5 18h14"></path>
+                <path d="M17 5h2v4"></path>
+                <path d="M19 5l-4 4"></path>
+              </svg>
+            </div>
+            <div class="k">// Output</div>
+            <div class="t">更多导出</div>
+            <div class="d">增加 PNG 预览导出、批量转换和转换前后滑动对比，覆盖更多真实工作流。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="next">
+    <div class="wrap next-wrap">
+      <h2 class="next-h">一个在浏览器本地运行的小工具，不只展示 UI，也展示上线能力。</h2>
+      <div class="next-actions">
+        <a class="btn" href="index.html#projects">Back to all projects <span>→</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button class="back-top" type="button" aria-label="回到顶部">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 19V5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-in");
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.14 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+  const backTop = document.querySelector(".back-top");
+  let lastButtonConfetti = 0;
+  function launchButtonConfetti(anchor) {
+    const rect = anchor.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const wrap = document.createElement("div");
+    wrap.className = "button-confetti";
+    wrap.style.left = `${centerX}px`;
+    wrap.style.top = `${centerY}px`;
+    const colors = ["#204FFE", "#43BFFF", "#8AA2F9", "#FA8C16", "#2EC66D", "#FF5A5F"];
+    for (let i = 0; i < 18; i += 1) {
+      const piece = document.createElement("span");
+      const angle = (Math.PI * 2 * i) / 18 + (Math.random() - 0.5) * 0.7;
+      const distance = 28 + Math.random() * 38;
+      piece.style.setProperty("--x", `${Math.cos(angle) * distance}px`);
+      piece.style.setProperty("--y", `${Math.sin(angle) * distance - 16}px`);
+      piece.style.setProperty("--r", `${(Math.random() * 260 - 130).toFixed(1)}deg`);
+      piece.style.setProperty("--s", `${(0.72 + Math.random() * 0.58).toFixed(2)}`);
+      piece.style.setProperty("--c", colors[i % colors.length]);
+      wrap.appendChild(piece);
+    }
+    document.body.appendChild(wrap);
+    window.setTimeout(() => wrap.remove(), 900);
+  }
+  function fireButtonConfetti(anchor) {
+    const now = Date.now();
+    if (now - lastButtonConfetti < 260) return;
+    lastButtonConfetti = now;
+    launchButtonConfetti(anchor);
+  }
+  if (backTop) {
+    const toggleBackTop = () => backTop.classList.toggle("is-show", window.scrollY > 640);
+    toggleBackTop();
+    window.addEventListener("scroll", toggleBackTop, { passive: true });
+    backTop.addEventListener("pointerdown", () => fireButtonConfetti(backTop));
+    backTop.addEventListener("mousedown", () => fireButtonConfetti(backTop));
+    backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+</script>
+</body>
+</html>

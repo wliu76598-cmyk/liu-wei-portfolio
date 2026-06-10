@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2025 Design Portfolio Preview | Liu Wei</title>
+<meta name="description" content="2025 Design Portfolio image preview." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f8fa;--surface:#fff;--ink:#0a0a0a;--ink-2:#6a6f76;
+    --line:rgba(10,10,10,.1);--accent:#208bff;--maxw:1180px;
+    --font-sans:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+    --font-mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans)}
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+    background:
+      radial-gradient(760px circle at 78% 0%,rgba(32,139,255,.14),transparent 62%),
+      radial-gradient(520px circle at 0% 28%,rgba(67,191,255,.1),transparent 60%),
+      linear-gradient(135deg,#fbfbfc 0%,#f7f8fa 48%,#eef8ff 100%);
+  }
+  .top{
+    position:sticky;top:0;z-index:20;height:72px;display:flex;align-items:center;
+    backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+    background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--line);
+  }
+  .top-inner{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+  .brand img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(32,139,255,.28))}
+  .brand span span{color:var(--ink-2);font-weight:400}
+  .back{font-size:14px;color:var(--ink-2);text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+  .back:hover{color:var(--ink)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:42px 24px 80px}
+  .stage{position:relative}
+  .viewer{
+    position:relative;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    background:rgba(255,255,255,.72);box-shadow:0 34px 90px -56px rgba(10,10,10,.34);
+  }
+  .image-wrap{
+    min-height:62vh;display:flex;align-items:flex-start;justify-content:center;
+    background:
+      linear-gradient(to right,rgba(32,139,255,.035) 1px,transparent 1px),
+      linear-gradient(to bottom,rgba(32,139,255,.035) 1px,transparent 1px),
+      rgba(255,255,255,.76);
+    background-size:34px 34px;
+  }
+  .preview-img{display:block;width:100%;height:auto;max-width:100%;opacity:1;transition:opacity .18s ease}
+  .viewer.is-changing .preview-img{opacity:.2}
+  .nav-btn{
+    position:fixed;top:50%;z-index:30;width:48px;height:48px;border-radius:16px;
+    border:1px solid var(--line);background:rgba(255,255,255,.84);color:var(--ink);
+    display:grid;place-items:center;cursor:pointer;
+    backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
+    box-shadow:0 18px 48px -32px rgba(10,10,10,.36);
+    transition:transform .2s ease,border-color .2s ease,color .2s ease;
+  }
+  .nav-btn:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+  .nav-btn.prev{left:24px}.nav-btn.next{right:24px}
+  .dots{
+    position:sticky;bottom:18px;z-index:25;margin:22px auto 0;width:max-content;
+    display:flex;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid var(--line);
+    background:rgba(255,255,255,.78);backdrop-filter:blur(16px) saturate(150%);
+    -webkit-backdrop-filter:blur(16px) saturate(150%);
+  }
+  .dot{width:8px;height:8px;border-radius:999px;border:0;background:rgba(10,10,10,.18);padding:0;cursor:pointer;transition:width .2s ease,background .2s ease}
+  .dot.is-active{width:24px;background:var(--accent)}
+  .back-top{
+    position:fixed;right:24px;bottom:24px;z-index:70;
+    display:grid;place-items:center;width:46px;height:46px;
+    border:1px solid var(--ink);border-radius:14px;
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
+    color:var(--ink);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    backdrop-filter:blur(18px) saturate(160%);
+    box-shadow:0 18px 44px -18px rgba(15,40,90,.32);
+    cursor:pointer;opacity:0;pointer-events:none;
+    transform:translateY(10px) scale(.96);
+    transition:opacity .22s ease,transform .22s ease,color .2s ease,background .2s ease,border-color .2s ease;
+  }
+  .back-top.is-show{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+  .back-top:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-2px) scale(1)}
+  .back-top:active{transform:translateY(0) scale(.98)}
+  .button-confetti{
+    position:fixed;left:0;top:0;z-index:120;pointer-events:none;
+    width:0;height:0;overflow:visible;
+  }
+  .button-confetti span{
+    position:absolute;left:0;top:0;width:7px;height:10px;border-radius:2px;
+    background:var(--c);
+    transform:translate(-50%,-50%) rotate(0deg) scale(var(--s));
+    animation:buttonConfettiPop .82s cubic-bezier(.16,.9,.24,1) forwards;
+    opacity:.95;
+  }
+  .button-confetti span:nth-child(3n){width:6px;height:6px;border-radius:50%}
+  .button-confetti span:nth-child(4n){width:10px;height:4px;border-radius:999px}
+  @keyframes buttonConfettiPop{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(.4);opacity:0}
+    12%{opacity:1}
+    100%{
+      transform:
+        translate(calc(-50% + var(--x)), calc(-50% + var(--y)))
+        rotate(var(--r))
+        scale(var(--s));
+      opacity:0;
+    }
+  }
+  @media(max-width:760px){
+    .top{height:64px}.brand img{width:40px;height:40px}.brand span span{display:none}
+    .wrap{padding:28px 14px 58px}
+    .viewer{border-radius:16px}.nav-btn{width:42px;height:42px;border-radius:14px;top:auto;bottom:72px}
+    .nav-btn.prev{left:18px}.nav-btn.next{right:18px}
+    .back-top{right:16px;bottom:16px;width:42px;height:42px}
+  }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <a class="brand back" href="index.html#projects" aria-label="返回首页项目区">
+        <img src="assets/logo.png" alt="Liu Wei logo" />
+        <span>Liu Wei <span>/ AI Product Designer</span></span>
+      </a>
+      <a class="back" href="index.html#projects">← Back to projects</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="stage" aria-label="作品图片预览">
+      <button class="nav-btn prev" type="button" aria-label="上一张">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="viewer" id="viewer">
+        <div class="image-wrap">
+          <img class="preview-img" id="previewImage" src="assets/portfolio-preview-01.png" alt="2025 Design Portfolio 预览图 1" />
+        </div>
+      </div>
+      <button class="nav-btn next" type="button" aria-label="下一张">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="dots" id="dots" aria-label="图片分页"></div>
+    </section>
+  </main>
+
+  <button class="back-top" id="backTop" type="button" aria-label="回到顶部">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 19V5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M6.5 10.5L12 5l5.5 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+<script>
+  const slides = [
+    "assets/portfolio-preview-01.png",
+    "assets/portfolio-preview-02.png",
+    "assets/portfolio-preview-03.png",
+    "assets/portfolio-preview-04.png"
+  ];
+  const image = document.getElementById("previewImage");
+  const viewer = document.getElementById("viewer");
+  const dots = document.getElementById("dots");
+  const backTop = document.getElementById("backTop");
+  let index = 0;
+  let touchStartX = 0;
+
+  slides.slice(1).forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+
+  slides.forEach((_, dotIndex) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "dot";
+    dot.setAttribute("aria-label", `查看第 ${dotIndex + 1} 张`);
+    dot.addEventListener("click", () => setSlide(dotIndex));
+    dots.appendChild(dot);
+  });
+
+  function launchButtonConfetti(anchor) {
+    if (!anchor) return;
+    const now = performance.now();
+    if (anchor.__lastButtonConfettiAt && now - anchor.__lastButtonConfettiAt < 180) return;
+    anchor.__lastButtonConfettiAt = now;
+
+    const rect = anchor.getBoundingClientRect();
+    const burst = document.createElement("div");
+    burst.className = "button-confetti";
+    burst.style.left = `${rect.left + rect.width * .72}px`;
+    burst.style.top = `${rect.top + rect.height / 2}px`;
+
+    const colors = ["#208BFF", "#43BFFF", "#00B64A", "#F5A524", "#7B5BFF", "#E5484D"];
+    const count = 20;
+    for (let i = 0; i < count; i += 1) {
+      const piece = document.createElement("span");
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - .5) * .65;
+      const distance = 42 + Math.random() * 44;
+      const fall = 18 + Math.random() * 34;
+      piece.style.setProperty("--x", `${Math.cos(angle) * distance}px`);
+      piece.style.setProperty("--y", `${Math.sin(angle) * distance + fall}px`);
+      piece.style.setProperty("--r", `${(Math.random() * 260 - 130).toFixed(1)}deg`);
+      piece.style.setProperty("--s", `${(.72 + Math.random() * .58).toFixed(2)}`);
+      piece.style.setProperty("--c", colors[i % colors.length]);
+      burst.appendChild(piece);
+    }
+
+    document.body.appendChild(burst);
+    window.setTimeout(() => burst.remove(), 900);
+  }
+
+  function setSlide(nextIndex) {
+    index = (nextIndex + slides.length) % slides.length;
+    viewer.classList.add("is-changing");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => {
+      image.src = slides[index];
+      image.alt = `2025 Design Portfolio 预览图 ${index + 1}`;
+      [...dots.children].forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === index));
+      viewer.classList.remove("is-changing");
+    }, 120);
+  }
+
+  document.querySelector(".prev").addEventListener("click", (event) => {
+    launchButtonConfetti(event.currentTarget);
+    setSlide(index - 1);
+  });
+  document.querySelector(".next").addEventListener("click", (event) => {
+    launchButtonConfetti(event.currentTarget);
+    setSlide(index + 1);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") setSlide(index - 1);
+    if (event.key === "ArrowRight") setSlide(index + 1);
+  });
+  viewer.addEventListener("touchstart", (event) => {
+    touchStartX = event.changedTouches[0].clientX;
+  }, { passive: true });
+  viewer.addEventListener("touchend", (event) => {
+    const delta = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) < 48) return;
+    setSlide(delta > 0 ? index - 1 : index + 1);
+  }, { passive: true });
+  function syncBackTop() {
+    backTop.classList.toggle("is-show", window.scrollY > 640);
+  }
+  window.addEventListener("scroll", syncBackTop, { passive: true });
+  backTop.addEventListener("click", (event) => {
+    launchButtonConfetti(event.currentTarget);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  setSlide(0);
+  syncBackTop();
+</script>
+</body>
+</html>

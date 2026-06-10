@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Product Designer | Portfolio</title>
+<meta name="description" content="AI Product Designer specializing in SaaS, Design System and AI Workflow." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#FAFAFA;
+    --bg-soft:#F2F2F2;
+    --surface:#FFFFFF;
+    --ink:#0A0A0A;
+    --ink-2:#1F1F1F;
+    --mute:#6B6B6B;
+    --mute-2:#9A9A9A;
+    --line:#E7E7E7;
+    --line-2:#EFEFEF;
+    --accent:#208BFF;
+    --accent-soft:rgba(32,139,255,.08);
+    --accent-ink:#0B5BD1;
+    --green:#00B64A;
+    --shadow-sm:0 1px 2px rgba(10,10,10,.04), 0 0 0 1px rgba(10,10,10,.04);
+    --shadow-md:0 12px 32px -12px rgba(10,10,10,.18), 0 0 0 1px rgba(10,10,10,.05);
+    --shadow-lg:0 40px 80px -24px rgba(10,10,10,.22), 0 0 0 1px rgba(10,10,10,.06);
+    --rad:14px;
+    --rad-lg:20px;
+    --maxw:1240px;
+    --nav-h:64px;
+    --font-sans:"Geist", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#0A0A0A;
+    --bg-soft:#111111;
+    --surface:#141414;
+    --ink:#F4F4F4;
+    --ink-2:#E5E5E5;
+    --mute:#8C8C8C;
+    --mute-2:#5E5E5E;
+    --line:#1E1E1E;
+    --line-2:#181818;
+    --accent:#4FA3FF;
+    --accent-soft:rgba(79,163,255,.10);
+    --accent-ink:#7FB8FF;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+    --shadow-md:0 12px 32px -12px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+    --shadow-lg:0 40px 80px -24px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--font-sans);
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    font-feature-settings:"ss01","cv11";
+    letter-spacing:-0.005em;
+    transition:background .35s ease, color .35s ease;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--accent);color:#fff}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+
+  /* shared layout helpers */
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  .mono{font-family:var(--font-mono);font-feature-settings:"ss01"}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--mute);
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .h-display{
+    font-family:"Syne","Geist",sans-serif;
+    font-size:clamp(48px, 7.4vw, 96px);
+    line-height:.96;
+    letter-spacing:-0.03em;
+    font-weight:700;
+    margin:0;
+  }
+  .h-1{font-family:"Syne","Geist",sans-serif;font-size:clamp(36px, 4.4vw, 56px);line-height:1.05;letter-spacing:-0.025em;font-weight:700;margin:0}
+  .h-2{font-family:"Syne","Geist",sans-serif;font-size:clamp(24px, 2.2vw, 32px);line-height:1.15;letter-spacing:-0.02em;font-weight:700;margin:0}
+  .lead{font-size:18px;line-height:1.55;color:var(--mute);margin:0;max-width:56ch}
+  .body{font-size:16px;line-height:1.65;color:var(--mute)}
+
+  /* section frame */
+  section{position:relative;padding:120px 0;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  .section-head{display:flex;flex-direction:column;align-items:flex-start;gap:18px;margin-bottom:30px}
+  .section-head > p{margin-top:0;width:100%}
+
+  /* nav */
+  .nav{
+    position:fixed;top:0;left:0;right:0;z-index:40;height:var(--nav-h);
+    display:flex;align-items:center;
+    backdrop-filter:blur(20px) saturate(160%);
+    -webkit-backdrop-filter:blur(20px) saturate(160%);
+    background:color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom:1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    transition:background .35s ease, border-color .35s ease;
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  .nav-logo{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-0.01em}
+  .nav-logo .mark{
+    width:50px;height:50px;display:grid;place-items:center;
+    flex-shrink:0;margin:-10px 0;
+  }
+  .nav-logo .mark img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 4px 10px rgba(32,139,255,.28))}
+  [data-theme="dark"] .nav-logo .mark img{filter:drop-shadow(0 4px 12px rgba(67,191,255,.4))}
+  .nav-links{display:flex;align-items:center;gap:4px}
+  .nav-links a{
+    position:relative;font-size:13.5px;color:var(--mute);padding:8px 12px;border-radius:8px;
+    transition:color .2s ease, background .2s ease;
+  }
+  .nav-links a:hover{color:var(--ink)}
+  .nav-links a.is-active{color:var(--ink)}
+  .nav-links a.is-active::after{
+    content:"";position:absolute;left:12px;right:12px;bottom:3px;height:1px;background:var(--ink);opacity:.6;
+  }
+  .nav-right{display:flex;align-items:center;gap:10px}
+  .nav-cta{
+    display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;
+    background:var(--ink);color:var(--bg);font-size:13px;font-weight:500;
+    transition:transform .2s ease, opacity .2s ease;
+  }
+  .nav-cta:hover{transform:translateY(-1px);opacity:.92}
+  .nav-cta .arrow{transition:transform .2s ease}
+  .nav-cta:hover .arrow{transform:translateX(2px)}
+
+  /* buttons */
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 22px;border-radius:14px;font-size:14.5px;font-weight:500;
+    border:0;cursor:pointer;
+    transition:transform .25s ease, box-shadow .25s ease, background .25s ease, border-color .25s ease, color .25s ease;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#2066F0,#43BFFF);color:#fff;
+    box-shadow:0 8px 24px -8px rgba(32,102,240,.6), inset 0 0 0 1px rgba(255,255,255,.18);
+  }
+  .btn .arrow{display:inline-block;transition:transform .2s ease}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 36px -10px rgba(32,102,240,.7), inset 0 0 0 1px rgba(255,255,255,.25)}
+  .btn-primary:hover .arrow{transform:translateX(3px)}
+  .btn-ghost{
+    background:transparent;color:var(--ink);
+    box-shadow:inset 0 0 0 1px var(--ink);
+  }
+  .btn-ghost:hover{
+    transform:translateY(-2px);
+    box-shadow:inset 0 0 0 1px var(--ink), 0 12px 28px -10px rgba(10,10,10,.32);
+  }
+
+  /* card */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--rad-lg);
+    transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease, border-color .35s ease;
+  }
+  .card-hov{cursor:pointer}
+  .card-hov:hover{transform:translateY(-6px);box-shadow:0 40px 80px -24px rgba(10,10,10,.22);border-color:var(--line)}
+  [data-theme="dark"] .card-hov:hover{box-shadow:0 40px 80px -24px rgba(0,0,0,.8)}
+
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.is-in{opacity:1;transform:none}
+
+  /* placeholder visuals */
+  .ph{
+    position:relative;border-radius:var(--rad);overflow:hidden;
+    background:
+      repeating-linear-gradient(45deg,
+        color-mix(in srgb, var(--ink) 4%, transparent) 0 1px,
+        transparent 1px 8px),
+      var(--bg-soft);
+    border:1px solid var(--line);
+    color:var(--mute-2);
+  }
+  .ph .ph-label{
+    position:absolute;top:10px;left:12px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  }
+
+  /* focus */
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+  /* responsive */
+  @media (max-width: 880px){
+    .nav-links{display:none}
+    section{padding:84px 0}
+    .section-head{margin-bottom:30px}
+    .wrap{padding:0 22px}
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<div id="root"></div>
+
+<!-- Speaker notes / SEO meta -->
+<noscript>AI Product Designer Portfolio — 单页作品集网站。</noscript>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx?v=20260528-13"></script>
+<script type="text/babel" src="hero.jsx?v=20260528-13"></script>
+<script type="text/babel" src="sections.jsx?v=20260610-about-copy-past"></script>
+<script type="text/babel" src="sections2.jsx?v=20260608-contact-copy"></script>
+<script type="text/babel" src="app.jsx?v=20260604-copy-toast"></script>
+
+</body>
+</html>
