@@ -65,9 +65,8 @@
   }
   .viewer.is-loading .image-skeleton{opacity:1}
   .skeleton-stack{
-    position:absolute;left:clamp(44px,6vw,80px);right:clamp(44px,6vw,80px);top:clamp(44px,6vw,80px);
-    height:min(860px,calc(100vh - 190px));
-    display:grid;grid-template-rows:auto minmax(260px,1fr) auto auto;gap:28px;align-content:start;
+    position:relative;margin:clamp(44px,6vw,80px);
+    display:grid;gap:28px;align-content:start;
   }
   .skeleton-head{display:grid;grid-template-columns:96px minmax(220px,720px);gap:32px;align-items:center}
   .skeleton-avatar,.skeleton-line,.skeleton-pill,.skeleton-card,.skeleton-hero{
@@ -87,9 +86,12 @@
   .skeleton-line.is-short{width:min(340px,42%)}
   .skeleton-pill{display:none}
   .skeleton-hero{width:100%;height:100%;border-radius:22px}
+  .skeleton-stack > .skeleton-hero{height:clamp(300px,34vw,520px)}
   .skeleton-card-row{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
   .skeleton-card{height:clamp(150px,19vh,280px);border-radius:18px}
   .skeleton-foot{display:grid;gap:22px}
+  .skeleton-section{display:grid;gap:28px;margin-top:26px}
+  .skeleton-section .skeleton-hero{height:clamp(260px,28vw,460px)}
   @keyframes skeletonShimmer{
     100%{transform:translateX(120%)}
   }
@@ -157,13 +159,16 @@
     .viewer{border-radius:16px}.nav-btn{width:42px;height:42px;border-radius:14px;top:auto;bottom:72px}
     .nav-btn.prev{left:18px}.nav-btn.next{right:18px}
     .back-top{right:16px;bottom:16px;width:42px;height:42px}
-    .skeleton-stack{left:28px;right:28px;top:28px;height:min(720px,calc(100vh - 136px));grid-template-rows:auto minmax(220px,1fr) auto auto;gap:18px}
+    .skeleton-stack{margin:28px;gap:18px}
     .skeleton-head{grid-template-columns:64px 1fr;gap:18px}
     .skeleton-avatar{width:64px;height:64px;border-radius:18px}
     .skeleton-lines{gap:14px}
     .skeleton-line{height:24px}
     .skeleton-card-row{grid-template-columns:1fr;gap:14px}
     .skeleton-card{height:44px}
+    .skeleton-stack > .skeleton-hero{height:260px}
+    .skeleton-section{gap:18px;margin-top:18px}
+    .skeleton-section .skeleton-hero{height:220px}
   }
 </style>
 </head>
@@ -202,6 +207,28 @@
               <div class="skeleton-foot">
                 <div class="skeleton-line is-wide"></div>
                 <div class="skeleton-line is-short"></div>
+              </div>
+              <div class="skeleton-section">
+                <div class="skeleton-hero"></div>
+                <div class="skeleton-card-row">
+                  <div class="skeleton-card"></div>
+                  <div class="skeleton-card"></div>
+                </div>
+                <div class="skeleton-foot">
+                  <div class="skeleton-line is-wide"></div>
+                  <div class="skeleton-line is-mid"></div>
+                </div>
+              </div>
+              <div class="skeleton-section">
+                <div class="skeleton-hero"></div>
+                <div class="skeleton-card-row">
+                  <div class="skeleton-card"></div>
+                  <div class="skeleton-card"></div>
+                </div>
+                <div class="skeleton-foot">
+                  <div class="skeleton-line is-wide"></div>
+                  <div class="skeleton-line is-short"></div>
+                </div>
               </div>
             </div>
           </div>
