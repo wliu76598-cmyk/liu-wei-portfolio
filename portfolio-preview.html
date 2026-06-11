@@ -47,15 +47,58 @@
     background:rgba(255,255,255,.72);box-shadow:0 34px 90px -56px rgba(10,10,10,.34);
   }
   .image-wrap{
-    min-height:62vh;display:flex;align-items:flex-start;justify-content:center;
+    position:relative;min-height:62vh;display:flex;align-items:flex-start;justify-content:center;
     background:
       linear-gradient(to right,rgba(32,139,255,.035) 1px,transparent 1px),
       linear-gradient(to bottom,rgba(32,139,255,.035) 1px,transparent 1px),
       rgba(255,255,255,.76);
     background-size:34px 34px;
   }
-  .preview-img{display:block;width:100%;height:auto;max-width:100%;opacity:1;transition:opacity .18s ease}
-  .viewer.is-changing .preview-img{opacity:.2}
+  .preview-img{display:block;width:100%;height:auto;max-width:100%;opacity:1;transition:opacity .28s ease}
+  .viewer.is-loading .preview-img{opacity:0}
+  .image-skeleton{
+    position:absolute;inset:0;z-index:2;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;
+    opacity:0;pointer-events:none;transition:opacity .22s ease;
+    background:
+      radial-gradient(720px circle at 72% 8%,rgba(32,139,255,.13),transparent 62%),
+      radial-gradient(520px circle at 10% 30%,rgba(67,191,255,.09),transparent 58%),
+      linear-gradient(to right,rgba(32,139,255,.04) 1px,transparent 1px),
+      linear-gradient(to bottom,rgba(32,139,255,.04) 1px,transparent 1px),
+      rgba(255,255,255,.9);
+    background-size:auto,auto,34px 34px,34px 34px,auto;
+  }
+  .viewer.is-loading .image-skeleton{opacity:1}
+  .skeleton-stack{
+    width:min(72%,760px);display:grid;gap:18px;justify-items:center;
+    margin-top:clamp(120px,22vh,260px);
+  }
+  .skeleton-line,.skeleton-pill,.skeleton-card{
+    position:relative;overflow:hidden;background:rgba(10,34,58,.08);
+    box-shadow:inset 0 0 0 1px rgba(32,139,255,.04);
+  }
+  .skeleton-line::after,.skeleton-pill::after,.skeleton-card::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.72) 46%,transparent 78%);
+    transform:translateX(-120%);
+    animation:skeletonShimmer 1.35s ease-in-out infinite;
+  }
+  .skeleton-line{height:34px;border-radius:999px}
+  .skeleton-line.is-wide{width:74%}
+  .skeleton-line.is-mid{width:58%}
+  .skeleton-line.is-short{width:42%}
+  .skeleton-pill{width:112px;height:30px;border-radius:999px;margin-bottom:8px;background:rgba(32,139,255,.1)}
+  .skeleton-card-row{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+  .skeleton-card{height:56px;border-radius:18px}
+  .loading-status{
+    position:absolute;left:50%;top:calc(clamp(120px,22vh,260px) + 238px);transform:translateX(-50%);
+    z-index:3;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;
+    color:rgba(105,113,126,.78);text-transform:uppercase;
+    padding:8px 12px;border:1px solid rgba(32,139,255,.12);border-radius:999px;
+    background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  }
+  @keyframes skeletonShimmer{
+    100%{transform:translateX(120%)}
+  }
   .nav-btn{
     position:fixed;top:50%;z-index:30;width:48px;height:48px;border-radius:16px;
     border:1px solid var(--line);background:rgba(255,255,255,.84);color:var(--ink);
@@ -120,6 +163,12 @@
     .viewer{border-radius:16px}.nav-btn{width:42px;height:42px;border-radius:14px;top:auto;bottom:72px}
     .nav-btn.prev{left:18px}.nav-btn.next{right:18px}
     .back-top{right:16px;bottom:16px;width:42px;height:42px}
+    .skeleton-stack{width:78%;gap:14px}
+    .skeleton-line{height:24px}
+    .skeleton-card-row{grid-template-columns:1fr;gap:10px;margin-top:18px}
+    .skeleton-card{height:44px}
+    .loading-status{top:calc(clamp(92px,18vh,180px) + 250px);font-size:11px}
+    .skeleton-stack{margin-top:clamp(92px,18vh,180px)}
   }
 </style>
 </head>
@@ -139,8 +188,22 @@
       <button class="nav-btn prev" type="button" aria-label="上一张">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <div class="viewer" id="viewer">
+      <div class="viewer is-loading" id="viewer" aria-busy="true">
         <div class="image-wrap">
+          <div class="image-skeleton" aria-hidden="true">
+            <div class="skeleton-stack">
+              <div class="skeleton-pill"></div>
+              <div class="skeleton-line is-wide"></div>
+              <div class="skeleton-line is-mid"></div>
+              <div class="skeleton-line is-short"></div>
+              <div class="skeleton-card-row">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+              </div>
+            </div>
+            <div class="loading-status">图片加载中</div>
+          </div>
           <img class="preview-img" id="previewImage" src="assets/portfolio-preview-01.png" alt="2025 Design Portfolio 预览图 1" />
         </div>
       </div>
@@ -171,11 +234,8 @@
   const backTop = document.getElementById("backTop");
   let index = 0;
   let touchStartX = 0;
-
-  slides.slice(1).forEach((src) => {
-    const img = new Image();
-    img.src = src;
-  });
+  let loadToken = 0;
+  const warmedSlides = new Set();
 
   slides.forEach((_, dotIndex) => {
     const dot = document.createElement("button");
@@ -185,6 +245,40 @@
     dot.addEventListener("click", () => setSlide(dotIndex));
     dots.appendChild(dot);
   });
+
+  function setLoading(isLoading) {
+    viewer.classList.toggle("is-loading", isLoading);
+    viewer.setAttribute("aria-busy", isLoading ? "true" : "false");
+  }
+
+  function warmNearbySlides() {
+    [index - 1, index + 1].forEach((nearIndex) => {
+      const normalized = (nearIndex + slides.length) % slides.length;
+      if (warmedSlides.has(normalized)) return;
+      warmedSlides.add(normalized);
+      const img = new Image();
+      img.src = slides[normalized];
+    });
+  }
+
+  function showSlide(nextIndex) {
+    const nextSrc = slides[nextIndex];
+    const token = loadToken + 1;
+    loadToken = token;
+    setLoading(true);
+
+    const finish = () => {
+      if (token !== loadToken) return;
+      setLoading(false);
+      warmNearbySlides();
+    };
+
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = nextSrc;
+    image.alt = `2025 Design Portfolio 预览图 ${nextIndex + 1}`;
+    if (image.complete && image.naturalWidth > 0) finish();
+  }
 
   function launchButtonConfetti(anchor) {
     if (!anchor) return;
@@ -219,14 +313,9 @@
 
   function setSlide(nextIndex) {
     index = (nextIndex + slides.length) % slides.length;
-    viewer.classList.add("is-changing");
     window.scrollTo({ top: 0, behavior: "smooth" });
-    window.setTimeout(() => {
-      image.src = slides[index];
-      image.alt = `2025 Design Portfolio 预览图 ${index + 1}`;
-      [...dots.children].forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === index));
-      viewer.classList.remove("is-changing");
-    }, 120);
+    showSlide(index);
+    [...dots.children].forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === index));
   }
 
   document.querySelector(".prev").addEventListener("click", (event) => {
@@ -258,7 +347,19 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  setSlide(0);
+  image.onload = () => {
+    setLoading(false);
+    warmNearbySlides();
+  };
+  image.onerror = () => {
+    setLoading(false);
+    warmNearbySlides();
+  };
+  if (image.complete && image.naturalWidth > 0) {
+    setLoading(false);
+    warmNearbySlides();
+  }
+  [...dots.children].forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === index));
   syncBackTop();
 </script>
 </body>
