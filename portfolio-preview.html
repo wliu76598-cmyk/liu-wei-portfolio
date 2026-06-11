@@ -46,6 +46,7 @@
     position:relative;border:1px solid var(--line);border-radius:20px;overflow:hidden;
     background:rgba(255,255,255,.72);box-shadow:0 34px 90px -56px rgba(10,10,10,.34);
   }
+  .viewer.is-loading{background:#fff}
   .image-wrap{
     position:relative;min-height:62vh;display:flex;align-items:flex-start;justify-content:center;
     background:
@@ -54,48 +55,41 @@
       rgba(255,255,255,.76);
     background-size:34px 34px;
   }
+  .viewer.is-loading .image-wrap{background:#fff}
   .preview-img{display:block;width:100%;height:auto;max-width:100%;opacity:1;transition:opacity .28s ease}
   .viewer.is-loading .preview-img{opacity:0}
   .image-skeleton{
-    position:absolute;inset:0;z-index:2;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;
+    position:absolute;inset:0;z-index:2;display:block;overflow:hidden;
     opacity:0;pointer-events:none;transition:opacity .22s ease;
-    background:
-      radial-gradient(720px circle at 72% 8%,rgba(32,139,255,.13),transparent 62%),
-      radial-gradient(520px circle at 10% 30%,rgba(67,191,255,.09),transparent 58%),
-      linear-gradient(to right,rgba(32,139,255,.04) 1px,transparent 1px),
-      linear-gradient(to bottom,rgba(32,139,255,.04) 1px,transparent 1px),
-      rgba(255,255,255,.9);
-    background-size:auto,auto,34px 34px,34px 34px,auto;
+    background:#fff;
   }
   .viewer.is-loading .image-skeleton{opacity:1}
   .skeleton-stack{
-    width:min(72%,760px);display:grid;gap:18px;justify-items:center;
-    margin-top:clamp(120px,22vh,260px);
+    position:absolute;left:clamp(44px,6vw,80px);right:clamp(44px,6vw,80px);top:clamp(44px,6vw,80px);
+    height:min(860px,calc(100vh - 190px));
+    display:grid;grid-template-rows:auto minmax(260px,1fr) auto auto;gap:28px;align-content:start;
   }
-  .skeleton-line,.skeleton-pill,.skeleton-card{
-    position:relative;overflow:hidden;background:rgba(10,34,58,.08);
-    box-shadow:inset 0 0 0 1px rgba(32,139,255,.04);
+  .skeleton-head{display:grid;grid-template-columns:96px minmax(220px,720px);gap:32px;align-items:center}
+  .skeleton-avatar,.skeleton-line,.skeleton-pill,.skeleton-card,.skeleton-hero{
+    position:relative;overflow:hidden;background:#eeeeee;
   }
-  .skeleton-line::after,.skeleton-pill::after,.skeleton-card::after{
+  .skeleton-avatar::after,.skeleton-line::after,.skeleton-pill::after,.skeleton-card::after,.skeleton-hero::after{
     content:"";position:absolute;inset:0;
-    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.72) 46%,transparent 78%);
+    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.82) 48%,transparent 76%);
     transform:translateX(-120%);
     animation:skeletonShimmer 1.35s ease-in-out infinite;
   }
+  .skeleton-avatar{width:96px;height:96px;border-radius:24px}
+  .skeleton-lines{display:grid;gap:22px}
   .skeleton-line{height:34px;border-radius:999px}
-  .skeleton-line.is-wide{width:74%}
-  .skeleton-line.is-mid{width:58%}
-  .skeleton-line.is-short{width:42%}
-  .skeleton-pill{width:112px;height:30px;border-radius:999px;margin-bottom:8px;background:rgba(32,139,255,.1)}
-  .skeleton-card-row{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
-  .skeleton-card{height:56px;border-radius:18px}
-  .loading-status{
-    position:absolute;left:50%;top:calc(clamp(120px,22vh,260px) + 238px);transform:translateX(-50%);
-    z-index:3;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;
-    color:rgba(105,113,126,.78);text-transform:uppercase;
-    padding:8px 12px;border:1px solid rgba(32,139,255,.12);border-radius:999px;
-    background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  }
+  .skeleton-line.is-wide{width:min(760px,78%)}
+  .skeleton-line.is-mid{width:min(520px,54%)}
+  .skeleton-line.is-short{width:min(340px,42%)}
+  .skeleton-pill{display:none}
+  .skeleton-hero{width:100%;height:100%;border-radius:22px}
+  .skeleton-card-row{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
+  .skeleton-card{height:clamp(150px,19vh,280px);border-radius:18px}
+  .skeleton-foot{display:grid;gap:22px}
   @keyframes skeletonShimmer{
     100%{transform:translateX(120%)}
   }
@@ -163,12 +157,13 @@
     .viewer{border-radius:16px}.nav-btn{width:42px;height:42px;border-radius:14px;top:auto;bottom:72px}
     .nav-btn.prev{left:18px}.nav-btn.next{right:18px}
     .back-top{right:16px;bottom:16px;width:42px;height:42px}
-    .skeleton-stack{width:78%;gap:14px}
+    .skeleton-stack{left:28px;right:28px;top:28px;height:min(720px,calc(100vh - 136px));grid-template-rows:auto minmax(220px,1fr) auto auto;gap:18px}
+    .skeleton-head{grid-template-columns:64px 1fr;gap:18px}
+    .skeleton-avatar{width:64px;height:64px;border-radius:18px}
+    .skeleton-lines{gap:14px}
     .skeleton-line{height:24px}
-    .skeleton-card-row{grid-template-columns:1fr;gap:10px;margin-top:18px}
+    .skeleton-card-row{grid-template-columns:1fr;gap:14px}
     .skeleton-card{height:44px}
-    .loading-status{top:calc(clamp(92px,18vh,180px) + 250px);font-size:11px}
-    .skeleton-stack{margin-top:clamp(92px,18vh,180px)}
   }
 </style>
 </head>
@@ -192,17 +187,23 @@
         <div class="image-wrap">
           <div class="image-skeleton" aria-hidden="true">
             <div class="skeleton-stack">
-              <div class="skeleton-pill"></div>
-              <div class="skeleton-line is-wide"></div>
-              <div class="skeleton-line is-mid"></div>
-              <div class="skeleton-line is-short"></div>
+              <div class="skeleton-head">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-lines">
+                  <div class="skeleton-line is-wide"></div>
+                  <div class="skeleton-line is-mid"></div>
+                </div>
+              </div>
+              <div class="skeleton-hero"></div>
               <div class="skeleton-card-row">
                 <div class="skeleton-card"></div>
                 <div class="skeleton-card"></div>
-                <div class="skeleton-card"></div>
+              </div>
+              <div class="skeleton-foot">
+                <div class="skeleton-line is-wide"></div>
+                <div class="skeleton-line is-short"></div>
               </div>
             </div>
-            <div class="loading-status">图片加载中</div>
           </div>
           <img class="preview-img" id="previewImage" src="assets/portfolio-preview-01.png" alt="2025 Design Portfolio 预览图 1" />
         </div>
